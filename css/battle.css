@@ -1,0 +1,257 @@
+/* ═══════════════════════════════════════════════════════════════════
+   battle.css — ฉากต่อสู้สไตล์ Pokémon 2D
+   🪤 บทเรียนจากเกมตัวก่อน: ห้ามใช้ grid-template-rows:auto 1fr auto
+      กับ body แล้วค่อยแทรก div เพิ่ม เพราะ 1fr จะไปลงลูกผิดตัว
+      แล้วจอดำทั้งหน้า (เกิดมา 2 ครั้ง) — ใช้ flex + min-height:0 เท่านั้น
+   ═══════════════════════════════════════════════════════════════════ */
+
+:root{
+  --bg:#14161c; --panel:#1d2129; --line:#38404e;
+  --ink:#eef2f7; --ink2:#aeb8c6; --ink3:#788393;
+  --good:#52c98a; --bad:#e2574c; --warn:#e7b549; --accent:#63a9f0;
+  --frame:#f4f1e8; --frameink:#22262e;
+  --grass1:#6fae5c; --grass2:#558a46; --sky1:#8fd0f0; --sky2:#cbe9f7;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:"Noto Sans Thai","Leelawadee UI","Segoe UI",system-ui,sans-serif;
+  font-size:15px; line-height:1.55; overflow:hidden;
+}
+#app{height:100%; display:flex; flex-direction:column; min-height:0}
+.screen{display:none; flex:1 1 auto; min-height:0; flex-direction:column}
+.screen.on{display:flex}
+canvas{image-rendering:pixelated; image-rendering:crisp-edges}
+button{font:inherit; cursor:pointer}
+
+/* ───────── ปุ่มทั่วไป ───────── */
+.big{
+  background:var(--accent); color:#0d1620; border:0; border-radius:10px;
+  padding:13px 30px; font-size:17px; font-weight:700;
+  box-shadow:0 4px 0 #2b6ba8; transition:transform .08s;
+}
+.big:active{transform:translateY(3px); box-shadow:0 1px 0 #2b6ba8}
+.ghost{
+  background:transparent; color:var(--ink2); border:1px solid var(--line);
+  border-radius:9px; padding:9px 16px;
+}
+.ghost:hover{color:var(--ink); border-color:var(--accent)}
+.ghost.sm{padding:5px 11px; font-size:13px}
+
+/* ───────── หน้าแรก ───────── */
+#scrTitle{align-items:center; justify-content:center; padding:20px; overflow:auto}
+.titlewrap{max-width:520px; text-align:center}
+.logo{
+  font-size:46px; font-weight:800; line-height:1.05; letter-spacing:-1px;
+  color:var(--frame); text-shadow:4px 4px 0 #2b6ba8;
+}
+.logo span{color:var(--warn); text-shadow:4px 4px 0 #8a5d10}
+.tag{color:var(--ink2); margin:18px 0 22px}
+.seedrow{margin:0 0 20px; font-size:13px; color:var(--ink3)}
+.seedrow input{
+  width:92px; background:#0f1218; color:var(--ink); border:1px solid var(--line);
+  border-radius:7px; padding:6px 8px; font:inherit; text-align:center;
+}
+.seedrow .note{display:block; margin-top:6px}
+#scrTitle .ghost{margin-top:12px}
+.warn{margin-top:26px; font-size:12px; color:var(--ink3); line-height:1.6}
+
+/* ───────── แผนที่ยิม ───────── */
+.bar{
+  display:flex; align-items:center; gap:10px; padding:9px 14px;
+  background:var(--panel); border-bottom:1px solid var(--line); flex:0 0 auto;
+  font-size:13px; flex-wrap:wrap;
+}
+.bar .spacer{flex:1 1 auto}
+.hpmini b{color:var(--good); font-variant-numeric:tabular-nums}
+.badges{letter-spacing:3px; font-size:17px}
+.maplist{flex:1 1 auto; min-height:0; overflow:auto; padding:16px; display:grid; gap:14px}
+.gym{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:14px 16px}
+.gym.locked{opacity:.45}
+.gym h3{margin:0 0 3px; font-size:18px}
+.gym h3 .b{font-size:22px; margin-right:7px}
+.gym .where{font-size:12px; color:var(--ink3); margin:0 0 9px}
+.gym .intro{font-size:13px; color:var(--ink2); margin:0 0 12px}
+.foerow{display:grid; gap:8px}
+.foebtn{
+  display:flex; align-items:center; gap:11px; width:100%; text-align:left;
+  background:#161a21; border:1px solid var(--line); border-radius:10px; padding:9px 12px;
+  color:var(--ink);
+}
+.foebtn:hover{border-color:var(--accent)}
+.foebtn.done{border-color:var(--good); background:#15241c}
+.foebtn canvas{width:40px; height:50px; flex:0 0 auto}
+.foebtn .fn{font-weight:700}
+.foebtn .fr{font-size:12px; color:var(--ink3); display:block}
+.foebtn .chk{margin-left:auto; color:var(--good); font-size:19px; flex:0 0 auto}
+
+/* ───────── ฉากต่อสู้ ───────── */
+#scrBattle{display:none}
+#scrBattle.on{display:flex}
+.field{
+  position:relative; flex:1 1 auto; min-height:180px; overflow:hidden;
+  background:
+    linear-gradient(to bottom,var(--sky1) 0%,var(--sky2) 52%,var(--grass1) 52%,var(--grass2) 100%);
+}
+.field.shake{animation:fieldshake .26s}
+@keyframes fieldshake{
+  0%,100%{transform:translate(0,0)} 25%{transform:translate(-5px,2px)}
+  50%{transform:translate(5px,-2px)} 75%{transform:translate(-3px,-1px)}
+}
+.field.flash::after{
+  content:''; position:absolute; inset:0; background:#fff; animation:fl .18s;
+}
+@keyframes fl{from{opacity:.75}to{opacity:0}}
+
+/* sprite + วงเงาใต้เท้าแบบคลาสสิก */
+.sprite{position:absolute; width:120px; text-align:center}
+.sprite canvas{width:100%; height:auto; position:relative; z-index:2}
+.sprite .shadow{
+  position:absolute; left:14%; width:72%; height:15px; bottom:-4px;
+  background:rgba(20,40,15,.3); border-radius:50%; z-index:1;
+}
+.foesp{right:7%; top:7%}
+.herosp{left:6%; bottom:4%; width:150px}
+.sprite.hurt canvas{animation:hurt .4s}
+@keyframes hurt{
+  0%,100%{transform:translateX(0); filter:none}
+  15%{transform:translateX(-9px); filter:brightness(2.4) saturate(.2)}
+  40%{transform:translateX(8px); filter:none}
+  65%{transform:translateX(-5px); filter:brightness(2.4) saturate(.2)}
+}
+.sprite.heal canvas{animation:healpulse .6s}
+@keyframes healpulse{0%,100%{filter:none}50%{filter:brightness(1.4) hue-rotate(60deg)}}
+
+/* ป้ายชื่อ+หลอด — กรอบกระดาษแบบเกมเก่า */
+.plate{
+  position:absolute; background:var(--frame); color:var(--frameink);
+  border:3px solid var(--frameink); border-radius:4px;
+  box-shadow:4px 4px 0 rgba(20,25,35,.45);
+  padding:6px 10px; min-width:206px; max-width:44%;
+}
+.foeplate{left:10px; top:10px}
+.heroplate{right:10px; bottom:10px}
+.pname{display:flex; align-items:baseline; gap:7px; flex-wrap:wrap}
+.pname b{font-size:15px}
+.pname .mind{font-size:10.5px; color:#6a6256}
+.hpline{display:flex; align-items:center; gap:6px; margin-top:3px}
+.hpline i{font-style:normal; font-size:10.5px; color:#6a6256; flex:0 0 auto}
+.hpline em{font-style:normal; font-size:10.5px; font-variant-numeric:tabular-nums; flex:0 0 auto}
+.hpbar{flex:1 1 auto; height:9px; background:#3b3f47; border:2px solid var(--frameink); border-radius:2px; overflow:hidden}
+.hpbar span{display:block; height:100%; background:var(--good); transition:width .45s ease}
+.hpbar span.mid{background:var(--warn)} .hpbar span.low{background:var(--bad)}
+.statuses{display:flex; gap:5px; margin-top:4px; flex-wrap:wrap}
+.statuses b{
+  font-size:10px; font-weight:700; border-radius:3px; padding:1px 6px;
+  background:#e2574c; color:#fff;
+}
+.statuses b.open{background:#2f9e68}
+
+/* เลขความเสียหายลอยขึ้น — ปุ่มต้องเด้งกลับ ไม่งั้นไม่รู้ว่ากดติด */
+.fxlayer{position:absolute; inset:0; pointer-events:none; z-index:5}
+.pop{
+  position:absolute; font-size:30px; font-weight:800; color:#fff;
+  text-shadow:0 0 3px #000,3px 3px 0 rgba(0,0,0,.5); animation:pop 1s forwards;
+}
+.pop.heal{color:#8df0b4}
+@keyframes pop{
+  0%{transform:translateY(0) scale(.6); opacity:0}
+  18%{transform:translateY(-14px) scale(1.25); opacity:1}
+  100%{transform:translateY(-62px) scale(1); opacity:0}
+}
+
+/* ───────── กล่องบทสนทนา ───────── */
+.dialog{
+  flex:0 0 auto; position:relative; min-height:96px;
+  background:var(--frame); color:var(--frameink);
+  border-top:4px solid var(--frameink);
+  padding:14px 38px 14px 18px; font-size:16px; line-height:1.6;
+  cursor:pointer; outline:none;
+}
+.dialog p{margin:0; white-space:pre-wrap}
+.dialog .cursor{
+  position:absolute; right:14px; bottom:9px; color:#2b6ba8;
+  animation:blink 1s steps(2) infinite; display:none;
+}
+.dialog.waiting .cursor{display:block}
+@keyframes blink{50%{opacity:0}}
+.dialog .who{font-weight:800}
+.dialog .tagline{font-weight:700}
+.dialog .t-ตรงจุด{color:#1d7a4a} .dialog .t-ทั่วไป{color:#8a7a2a}
+.dialog .t-เข้าตัวเอง,.dialog .t-พลาดหนัก{color:#b0372c}
+.dialog .t-good{color:#1d7a4a} .dialog .t-weak{color:#8a7a2a} .dialog .t-bad{color:#b0372c}
+.dialog .factbox{
+  margin-top:9px; padding:9px 11px; background:#e6ecf5; border-left:4px solid #2b6ba8;
+  font-size:13.5px; line-height:1.65; border-radius:0 5px 5px 0;
+}
+.dialog .factbox b{display:block; color:#2b6ba8; font-size:11.5px; letter-spacing:.5px}
+
+/* ───────── เมนูคำสั่ง ───────── */
+.menu{
+  flex:0 0 auto; background:var(--panel); border-top:1px solid var(--line);
+  padding:10px; display:grid; gap:8px; grid-template-columns:repeat(2,1fr);
+  max-height:46vh; overflow:auto;
+}
+.menu.one{grid-template-columns:1fr}
+.menu.hide{display:none}
+.mbtn{
+  display:block; text-align:left; background:#161a21; color:var(--ink);
+  border:1px solid var(--line); border-left:4px solid var(--line);
+  border-radius:9px; padding:10px 13px; font-size:14.5px; line-height:1.45;
+}
+.mbtn:hover{border-color:var(--accent); border-left-color:var(--accent); background:#1b212b}
+.mbtn:disabled{opacity:.38; cursor:not-allowed}
+.mbtn .k{font-size:11px; color:var(--ink3); display:block; margin-bottom:2px}
+.mbtn.pick{border-left-color:var(--accent)}
+.mbtn.on{border-color:var(--accent); background:#1c2838}
+.mbtn.back{border-left-color:#7a8496; color:var(--ink2)}
+.menu .hd{grid-column:1/-1; font-size:12px; color:var(--ink3); padding:2px 4px}
+@media(max-width:620px){
+  .menu{grid-template-columns:1fr}
+  .plate{min-width:0; max-width:52%; padding:5px 8px}
+  .pname b{font-size:13px}
+  .foesp{width:86px} .herosp{width:104px}
+  .logo{font-size:36px}
+}
+
+/* ───────── การ์ดสรุป ───────── */
+.cardwrap{flex:1 1 auto; min-height:0; overflow:auto; padding:18px; display:flex; justify-content:center}
+.card{
+  background:var(--panel); border:1px solid var(--line); border-radius:16px;
+  padding:20px 22px; max-width:560px; width:100%; align-self:flex-start;
+}
+.card h2{margin:0 0 4px; font-size:23px}
+.card .res{font-size:13px; color:var(--ink3); margin:0 0 15px}
+.card .res.win{color:var(--good)} .card .res.lose{color:var(--bad)}
+.card .lesson{
+  background:#161a21; border-left:4px solid var(--accent); border-radius:0 8px 8px 0;
+  padding:11px 13px; font-size:13.5px; color:var(--ink2); margin:0 0 16px;
+}
+.card .gradebig{font-size:62px; font-weight:800; line-height:1; color:var(--warn)}
+.card table{width:100%; border-collapse:collapse; font-size:13.5px; margin:12px 0 18px}
+.card td{padding:6px 2px; border-bottom:1px solid var(--line)}
+.card td:last-child{text-align:right; font-variant-numeric:tabular-nums; color:var(--ink2)}
+.card .btns{display:flex; gap:9px; flex-wrap:wrap}
+
+/* ───────── overlay เล่มทะเบียน ───────── */
+.overlay{
+  position:fixed; inset:0; background:rgba(8,10,14,.86); z-index:50;
+  display:none; align-items:center; justify-content:center; padding:16px;
+}
+.overlay.on{display:flex}
+.book{
+  background:var(--panel); border:1px solid var(--line); border-radius:16px;
+  padding:20px 22px; max-width:580px; width:100%; max-height:86vh; overflow:auto;
+}
+.book h2{margin:0 0 3px; font-size:21px}
+.book .sub{margin:0 0 15px; font-size:12.5px; color:var(--ink3)}
+.book .ent{display:flex; gap:12px; padding:11px 0; border-bottom:1px solid var(--line)}
+.book .ent canvas{width:44px; height:55px; flex:0 0 auto}
+.book .ent .n{font-weight:700}
+.book .ent .m{font-size:12.5px; color:var(--ink2)}
+.book .ent .w{font-size:12px; color:var(--ink3)}
+.book .ent .w b{color:var(--good)}
+.book .ent.unk{opacity:.4}
+.book .gymhd{font-size:12px; color:var(--ink3); margin:15px 0 0; letter-spacing:.5px}
+.book .big{margin-top:18px}

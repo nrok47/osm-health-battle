@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>อสม. ปราบข่าวลวง</title>
+<link rel="stylesheet" href="css/battle.css">
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ══ หน้าแรก ══ -->
+  <section class="screen on" id="scrTitle">
+    <div class="titlewrap">
+      <div class="logo">อสม.<br><span>ปราบข่าวลวง</span></div>
+      <p class="tag">เกมต่อสู้ 1v1 — อาวุธของคุณคือคำพูด<br>
+         ศัตรูไม่ใช่คน แต่เป็นความเชื่อผิดที่อยู่ในตัวเขา</p>
+      <div class="seedrow">
+        <label>เลขตั้งต้น (seed) <input id="seedIn" type="number" value="2570"></label>
+        <span class="note">เลขเดิม = เหตุการณ์เดิม เทียบกลยุทธ์ได้</span>
+      </div>
+      <button class="big" id="btnStart">เริ่มลงพื้นที่</button>
+      <button class="ghost" id="btnBookT">📖 เล่มทะเบียนชาวบ้าน</button>
+      <p class="warn">⚠️ ของทดลองเพื่อฝึกการสื่อสาร — ชาวบ้านทุกคนเป็นตัวละครสมมุติ
+         ส่วนเนื้อหาสุขภาพอ้างหลักวิชาจริง แต่ไม่ใช่คำแนะนำเฉพาะบุคคล</p>
+    </div>
+  </section>
+
+  <!-- ══ แผนที่ยิม ══ -->
+  <section class="screen" id="scrMap">
+    <header class="bar">
+      <span class="hpmini">พลังใจ <b id="mapHP">100</b></span>
+      <span id="mapBadges" class="badges"></span>
+      <span class="spacer"></span>
+      <button class="ghost sm" id="btnRest">พักตั้งหลัก (+30)</button>
+      <button class="ghost sm" id="btnBookM">📖 เล่มทะเบียน</button>
+    </header>
+    <div class="maplist" id="maplist"></div>
+  </section>
+
+  <!-- ══ ฉากต่อสู้ ══ -->
+  <section class="screen" id="scrBattle">
+    <div class="field" id="field">
+
+      <!-- ชาวบ้าน: บนขวา · ป้ายบนซ้าย (แบบ Pokémon) -->
+      <div class="plate foeplate">
+        <div class="pname"><b id="foeName">—</b><span class="mind" id="foeMind"></span></div>
+        <div class="hpline"><i>ความเชื่อผิด</i>
+          <div class="hpbar"><span id="foeBar"></span></div>
+          <em id="foeNum">0/0</em>
+        </div>
+        <div class="statuses" id="foeStatus"></div>
+      </div>
+      <div class="sprite foesp" id="foeSp"><canvas id="foeCv"></canvas><div class="shadow"></div></div>
+
+      <!-- อสม.: ล่างซ้าย · ป้ายล่างขวา -->
+      <div class="sprite herosp" id="heroSp"><canvas id="heroCv"></canvas><div class="shadow"></div></div>
+      <div class="plate heroplate">
+        <div class="pname"><b>อสม. (คุณ)</b><span class="mind" id="stanceNow">วิชา: ข้อมูล</span></div>
+        <div class="hpline"><i>พลังใจ</i>
+          <div class="hpbar"><span id="heroBar"></span></div>
+          <em id="heroNum">100/100</em>
+        </div>
+      </div>
+
+      <div class="fxlayer" id="fxlayer"></div>
+    </div>
+
+    <div class="dialog" id="dialog" tabindex="0">
+      <p id="dlgText"></p>
+      <span class="cursor" id="dlgCursor">▼</span>
+    </div>
+
+    <div class="menu" id="menu"></div>
+  </section>
+
+  <!-- ══ สรุปเคส ══ -->
+  <section class="screen" id="scrCase">
+    <div class="cardwrap"><div class="card" id="caseCard"></div></div>
+  </section>
+
+  <!-- ══ สรุปจบเกม ══ -->
+  <section class="screen" id="scrEnd">
+    <div class="cardwrap"><div class="card" id="endCard"></div></div>
+  </section>
+
+  <!-- ══ เล่มทะเบียน (ซ้อนทับ) ══ -->
+  <div class="overlay" id="bookOv">
+    <div class="book">
+      <h2>📖 เล่มทะเบียนชาวบ้าน</h2>
+      <p class="sub">เจอแล้วจึงรู้ว่าเขา “เชื่อเพราะอะไร” — และวิชาไหนใช้ได้กับเขา</p>
+      <div id="bookBody"></div>
+      <button class="big" id="btnBookClose">ปิด</button>
+    </div>
+  </div>
+
+</div>
+
+<script src="js/data.js"></script>
+<script src="js/pixel.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/ui.js"></script>
+</body>
+</html>
