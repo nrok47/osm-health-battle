@@ -17,6 +17,7 @@
   var waiting = false;      /* รอผู้เล่นกดเพื่อไปบทต่อไป */
   var menuMode = 'root';
   var SAVE = 'osm-battle-book-v1';
+  var BEST = 'osm-battle-best-v1';      /* สถิติดีที่สุดแยกตาม seed+โหมด — เหตุผลให้กลับมาเล่นซ้ำ */
 
   /* ───────── จอ ───────── */
   function show(id) {
@@ -32,13 +33,36 @@
   function saveBook() {
     try { localStorage.setItem(SAVE, JSON.stringify(G.book)); } catch (e) {}
   }
+  function loadBest() {
+    try { return JSON.parse(localStorage.getItem(BEST)) || {}; } catch (e) { return {}; }
+  }
+  function bestKey(seed, hard) { return seed + (hard ? 'H' : 'N'); }
+  /* คืนค่าสถิติเดิม (ถ้ามี) แล้วบันทึกทับเมื่อทำได้ดีกว่า */
+  function saveBest(seed, hard, sc) {
+    var all = loadBest(), k = bestKey(seed, hard), prev = all[k] || null;
+    if (!prev || sc.score > prev.score) {
+      all[k] = { score: sc.score, grade: sc.grade };
+      try { localStorage.setItem(BEST, JSON.stringify(all)); } catch (e) {}
+    }
+    return prev;
+  }
+  function showBestLine() {
+    var seed = parseInt(el('seedIn').value, 10) || 2570;
+    var rec = loadBest()[bestKey(seed, el('hardIn').checked)];
+    el('bestLine').textContent = rec
+      ? '🏆 สถิติของ seed นี้: ' + rec.score + ' คะแนน (เกรด ' + rec.grade + ') — ทำให้ดีกว่านี้ดู'
+      : 'ยังไม่เคยเล่น seed นี้';
+  }
 
   /* ───────── วาด sprite ───────── */
   function spriteOf(spec, cv, scale, flip) { PIXEL.draw(cv, spec, scale, flip); }
 
   /* ═══ แผนที่ยิม ═══ */
   function drawMap() {
-    el('mapHP').textContent = G.heroHP;
+    el('mapHP').textContent = G.heroHP + '/' + G.maxHP;
+    var rb = el('btnRest');
+    rb.textContent = 'พักตั้งหลัก +' + BAL.restHeal + ' (เหลือ ' + G.restsLeft + ')';
+    rb.disabled = G.restsLeft <= 0 || G.heroHP >= G.maxHP;
     el('mapBadges').textContent = GYMS.map(function (gy) {
       return G.badges.indexOf(gy.id) >= 0 ? gy.badge : '◻';
     }).join('');
@@ -98,7 +122,7 @@
   function refreshBars(instant) {
     var b = G.b;
     var fp = Math.max(0, b.hp / b.maxhp * 100);
-    var hp = Math.max(0, G.heroHP / BAL.heroHP * 100);
+    var hp = Math.max(0, G.heroHP / G.maxHP * 100);
     var fb = el('foeBar'), hb = el('heroBar');
     if (instant) { fb.style.transition = 'none'; hb.style.transition = 'none'; }
     fb.style.width = fp + '%';
@@ -107,7 +131,9 @@
     hb.className = hp > 50 ? '' : hp > 22 ? 'mid' : 'low';
     if (instant) setTimeout(function () { fb.style.transition = ''; hb.style.transition = ''; }, 30);
     el('foeNum').textContent = b.hp + '/' + b.maxhp;
-    el('heroNum').textContent = G.heroHP + '/' + BAL.heroHP;
+    el('turnLeft').textContent = 'รอบที่ ' + (b.turn + 1) + '/' + b.limit;
+    el('turnLeft').className = 'turns' + (b.limit - b.turn <= 2 ? ' urgent' : '');
+    el('heroNum').textContent = G.heroHP + '/' + G.maxHP;
     el('stanceNow').textContent = 'วิชา: ' + G.stance;
 
     var st = '';
@@ -256,8 +282,7 @@
     } else if (mode === 'fight') {
       m.classList.add('one');
       head('เลือกสิ่งที่จะพูด — ชนิดของท่าจะเฉลยหลังพูดเท่านั้น');
-      var q = ENGINE.currentQ(G);
-      q.a.forEach(function (c, i) {
+      ENGINE.currentChoices(G).forEach(function (c, i) {
         btn(esc(c.s), String.fromCharCode(97 + i) + '.', function () { pick(i); });
       });
       btn('↩ กลับ', '', function () { drawMenu('root'); }, { cls: 'back' });
@@ -276,11 +301,12 @@
     } else if (mode === 'stance') {
       m.classList.add('one');
       var rec = G.book[G.b.foe.name];
-      head(rec && rec.mind
+      head(G.hard ? 'โหมดยาก — ไม่เฉลยว่าวิชาไหนเข้าทางใคร ต้องอ่านเอาเอง'
+        : rec && rec.mind
         ? 'เคยเจอแล้ว — ' + G.b.foe.name + ' ' + MIND[G.b.foe.mind].label
         : 'ยังไม่เคยคุยกับคนนี้ ต้องเดาจากสิ่งที่สังเกตได้');
       STANCE.forEach(function (s) {
-        var mul = rec && rec.mind ? MIND[G.b.foe.mind].mul[s.id] : null;
+        var mul = (rec && rec.mind && !G.hard) ? MIND[G.b.foe.mind].mul[s.id] : null;
         var hintTxt = mul === null ? esc(s.desc)
           : esc(s.desc) + '  →  ' + (mul >= 1.4 ? 'เข้าทางเขา ×' + mul
             : mul <= 0.75 ? 'ไม่เข้าทาง ×' + mul : 'กลาง ๆ ×' + mul);
@@ -334,6 +360,11 @@
       cls = 'lose';
       lesson = 'สิ่งที่กินพลังใจเราคือการตอบผิดหลักวิชาและการตอบไม่ตรงจุดแล้วถูกสวนกลับ · ' +
         f.name + ' ' + MIND[f.mind].label + ' ลองเปลี่ยนวิชาก่อนไฟท์รอบหน้า';
+    } else if (how === 'timeup') {
+      title = 'หมดเวลาเยี่ยม — ' + f.name + ' ยังไม่เข้าระบบ';
+      cls = 'lose';
+      lesson = 'คุยครบรอบแล้วแต่ยังไม่ถึงไหน · ' + f.name + ' ' + MIND[f.mind].label +
+        ' — เลือกวิชาให้ตรงกับคนแบบนี้ จะจบได้ใน 5-6 รอบ';
     } else {
       title = 'ถอยตั้งหลัก — ' + f.name + ' ยังไม่เข้าระบบ';
       cls = 'lose';
@@ -349,7 +380,7 @@
       '<p class="res ' + cls + '">' + esc(f.name) + ' · ' + esc(f.role) + '</p>' +
       '<div class="lesson">' + esc(lesson) + '</div>' +
       '<table>' +
-      '<tr><td>พลังใจที่เหลือ</td><td>' + G.heroHP + '/' + BAL.heroHP + '</td></tr>' +
+      '<tr><td>พลังใจที่เหลือ</td><td>' + G.heroHP + '/' + G.maxHP + '</td></tr>' +
       '<tr><td>ตอบผิดหลักวิชาในเคสนี้</td><td>' + G.b.mistakes + ' ครั้ง</td></tr>' +
       '<tr><td>ชาวบ้านที่เข้าระบบแล้วทั้งหมด</td><td>' + done + '/' + total + '</td></tr>' +
       '</table>';
@@ -375,7 +406,8 @@
 
   function finalCard() {
     var s = ENGINE.score(G);
-    var h = '<h2>สรุปผลงานทั้งปี</h2>' +
+    var prev = saveBest(G.seed, G.hard, s);
+    var h = '<h2>สรุปผลงานทั้งปี' + (G.hard ? ' · โหมดยาก' : '') + '</h2>' +
       '<div class="gradebig">' + s.grade + '</div>' +
       '<p class="res">' + esc(s.title) + ' · ' + s.score + '/100 คะแนน</p>' +
       '<table>' + s.parts.map(function (p) {
@@ -384,6 +416,13 @@
       }).join('') + '</table>' +
       '<div class="lesson">เกมนี้ให้คะแนนจำนวนคนที่เข้าระบบติดตามมากที่สุด แต่หักคะแนนทุกครั้งที่เราให้ข้อมูลผิด ' +
       'เพราะสิ่งที่ชาวบ้านจำไปเล่าต่อ ย้อนกลับมาเป็นงานของเราเองในปีถัดไป</div>' +
+      '<div class="lesson">' +
+      (prev ? (s.score > prev.score
+          ? '🏆 ทำลายสถิติเดิมของ seed ' + G.seed + ' แล้ว (เดิม ' + prev.score + ' เกรด ' + prev.grade + ')'
+          : 'สถิติเดิมของ seed ' + G.seed + ' คือ ' + prev.score + ' เกรด ' + prev.grade + ' — ยังทำไม่ถึง')
+        : '🏆 บันทึกเป็นสถิติแรกของ seed ' + G.seed + ' แล้ว') +
+      '<br>ลองเปลี่ยน seed เพื่อได้ลำดับคำถามและตำแหน่งตัวเลือกชุดใหม่' +
+      (G.hard ? '' : ' หรือเปิดโหมดยากดู') + '</div>' +
       '<div class="btns"><button class="big" id="eAgain">เล่นใหม่</button>' +
       '<button class="ghost" id="eBook">📖 เล่มทะเบียน</button></div>';
     el('endCard').innerHTML = h;
@@ -435,16 +474,23 @@
   /* ───────── ผูกปุ่ม ───────── */
   el('btnStart').onclick = function () {
     var seed = parseInt(el('seedIn').value, 10) || 2570;
-    G = ENGINE.newGame(seed);
+    G = ENGINE.newGame(seed, el('hardIn').checked);
     G.book = loadBook();          /* ความรู้เรื่องคนไม่หายไปตอนเล่นใหม่ */
     /* แต่สถิติของรอบนี้เริ่มใหม่ และ "won" ของรอบก่อนไม่นับเป็นผลงานรอบนี้ */
     Object.keys(G.book).forEach(function (n) { G.book[n].won = false; });
     drawMap();
   };
+  el('btnDice').onclick = function () {
+    el('seedIn').value = 1000 + Math.floor(Math.random() * 9000);  /* ปุ่มสุ่ม seed ไม่ใช่ตัวตัดสินในเกม จึงใช้ได้ */
+    showBestLine();
+  };
+  el('seedIn').oninput = showBestLine;
+  el('hardIn').onchange = showBestLine;
+  showBestLine();
   el('btnBookT').onclick = openBook;
   el('btnBookM').onclick = openBook;
   el('btnBookClose').onclick = function () { el('bookOv').classList.remove('on'); };
-  el('btnRest').onclick = function () { ENGINE.rest(G); drawMap(); };
+  el('btnRest').onclick = function () { if (ENGINE.rest(G)) drawMap(); };
 
   el('dialog').addEventListener('click', function () { if (waiting || typing) advance(); });
 

@@ -54,6 +54,10 @@ button{font:inherit; cursor:pointer}
   border-radius:7px; padding:6px 8px; font:inherit; text-align:center;
 }
 .seedrow .note{display:block; margin-top:6px}
+.seedrow .hardbox{display:flex; align-items:flex-start; gap:7px; text-align:left;
+  margin:14px auto 0; max-width:390px; line-height:1.5; cursor:pointer}
+.seedrow .hardbox input{flex:0 0 auto; margin-top:3px}
+.best{margin:12px 0 0; font-size:12.5px; color:var(--warn); min-height:18px}
 #scrTitle .ghost{margin-top:12px}
 .warn{margin-top:26px; font-size:12px; color:var(--ink3); line-height:1.6}
 
@@ -141,6 +145,9 @@ button{font:inherit; cursor:pointer}
 .hpbar{flex:1 1 auto; height:9px; background:#3b3f47; border:2px solid var(--frameink); border-radius:2px; overflow:hidden}
 .hpbar span{display:block; height:100%; background:var(--good); transition:width .45s ease}
 .hpbar span.mid{background:var(--warn)} .hpbar span.low{background:var(--bad)}
+.turns{position:absolute; right:9px; top:5px; font-size:10px; color:#6a6256;
+  font-variant-numeric:tabular-nums}
+.turns.urgent{color:#b0372c; font-weight:700}
 .statuses{display:flex; gap:5px; margin-top:4px; flex-wrap:wrap}
 .statuses b{
   font-size:10px; font-weight:700; border-radius:3px; padding:1px 6px;

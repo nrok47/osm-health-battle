@@ -18,7 +18,10 @@
          ศัตรูไม่ใช่คน แต่เป็นความเชื่อผิดที่อยู่ในตัวเขา</p>
       <div class="seedrow">
         <label>เลขตั้งต้น (seed) <input id="seedIn" type="number" value="2570"></label>
-        <span class="note">เลขเดิม = เหตุการณ์เดิม เทียบกลยุทธ์ได้</span>
+        <button class="ghost sm" id="btnDice">🎲 สุ่ม</button>
+        <span class="note">เลขเดิม = ลำดับคำถามและตำแหน่งตัวเลือกเดิม · เลขใหม่ = ชุดใหม่</span>
+        <label class="hardbox"><input id="hardIn" type="checkbox"> โหมดยาก — พลังใจน้อยลง เวลาเยี่ยมสั้นลง และไม่เฉลยว่าวิชาไหนเข้าทางใคร</label>
+        <p class="best" id="bestLine"></p>
       </div>
       <button class="big" id="btnStart">เริ่มลงพื้นที่</button>
       <button class="ghost" id="btnBookT">📖 เล่มทะเบียนชาวบ้าน</button>
@@ -46,6 +49,7 @@
       <!-- ชาวบ้าน: บนขวา · ป้ายบนซ้าย (แบบ Pokémon) -->
       <div class="plate foeplate">
         <div class="pname"><b id="foeName">—</b><span class="mind" id="foeMind"></span></div>
+        <span class="turns" id="turnLeft"></span>
         <div class="hpline"><i>ความเชื่อผิด</i>
           <div class="hpbar"><span id="foeBar"></span></div>
           <em id="foeNum">0/0</em>
